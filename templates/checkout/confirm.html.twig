@@ -1,0 +1,124 @@
+{% extends 'base.html.twig' %}
+
+{% block title %} Confirmer le paiement OusMarket !{% endblock %}
+
+{% block scriptStripe %}
+    <script src="https://js.stripe.com/v3/"></script>
+{% endblock scriptStripe %}
+{% block body %}
+
+{{ include("partials/title_section.html.twig", {'name':'Confirmer le paiement'}) }}
+
+<div class="section checkout">
+	<div class="container">
+        <div class="row">
+        	<div class="col-md-6">
+                <div class="heading_s1">
+                    <h4>Veuillez vérifier votre adresse de livraison</h4>
+                    <div class="content" id="address">
+                        {{ address | replace({'[spr]' : '<br>'}) | raw}}
+                        <a href="{{ path('address_edit',{'id': address.id})}}" class="btn btn-fill-out mt-1">Modifier l'adresse</a>
+                        <a href="{{ path('checkout_edit')}}" class="btn btn-fill-out mt-1">Changement d'adresse</a>
+                    </div>
+                </div>
+               
+                {% if informations %}
+                    <div class="heading_s1">
+                        <h4>Veuillez vérifier les informations supplémentaires</h4>
+                        <div class="form-group mb-0" id="informations">
+                            {{ informations }}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="col-md-6">
+                <div class="order_review">
+                    <div class="heading_s1">
+                        <h4>Vos commandes</h4>
+                    </div>
+                    <div class="table-responsive order_table">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Produit</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                
+                                <tbody>
+                                    {% for element in cart.products %}
+                                    <tr>
+                                        <td> {{ element.product.name }} <span class="product-qty">x {{ element.quantity }}</span></td>
+                                        <td>{{ element.product.price/100 }} FCFA</td>
+                                    </tr>
+                                    {% endfor %}
+ 
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th>Sous-Total HT</th>
+                                    <td class="product-subtotal">{{ cart.data.subTotalHT }} FCFA</td>
+                                </tr>
+                                <tr>
+                                    <th>Taxe</th>
+                                    <td class="product-subtotal">{{ cart.data.Taxe }} FCFA </td>
+                                </tr>
+                                <tr>
+                                    <th>Total</th>
+                                    <td class="product-subtotal">{{ cart.data.subTotalTTC }} FCFA</td>
+                                </tr>
+                            </tfoot>
+
+                        </table>
+                    </div>
+                    <div class="payment_method">
+                        <div class="heading_s1">
+                            <h4>Commande</h4>
+                        </div>
+                        <a href="/create-checkout-session/{{ reference }}" type="submit" id="checkout-buttons" 
+                        class="btn btn-fill-out btn-block">
+                        Valider Ma Commande | {{ cart.data.subTotalTTC }} FCFA
+                    </a>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block javascripts %}
+    <script type="text/javascript">
+    var stripe = Stripe("pk_test_51ICmCqGJ92ssJiXRdlkk67IhSWwT3hlTPGbtJeWUNHiihcXDY7AKqbNKFOKRgjDC11Feei2u0n1GDjVw7L7gxMoq00VVoepy9o");
+    var checkoutButton = document.getElementById("checkout-button");
+
+    checkoutButton.addEventListener("click", function () {
+      fetch("/create-checkout-session/{{ reference }}", {
+        method: "POST",
+      })
+        .then(function (response) {
+          return response.json();
+        })
+        .then(function (session) {
+          return stripe.redirectToHome({ sessionId: session.id });
+        })
+        .then(function (result) {
+          // If redirectToCheckout fails due to a browser or network
+          // error, you should display the localized error message to your
+          // customer using error.message.
+          if (result.error) {
+            alert(result.error.message);
+          }
+        })
+        .catch(function (error) {
+          console.error("Error:", error);
+        });
+    });
+    </script>
+{% endblock %}
